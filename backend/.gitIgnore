@@ -1,0 +1,41 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp/
+.pnp.js
+*.tsbuildinfo
+
+# Build / output
+dist/
+build/
+out/
+coverage/
+.nyc_output/
+.tmp/
+.cache/
+
+# Environment
+.env
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Optional: lockfiles (usually committed; uncomment to ignore)
+# package-lock.json
+# yarn.lock
