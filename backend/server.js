@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+const orderRoutes = require("./routes/orderRoutes")
 
 connectDB();
 
@@ -16,6 +17,7 @@ app.use(cors());
 app.use("/api/auth", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/order", orderRoutes);
 
 const PORT = process.env.PORT || 5000;
 
