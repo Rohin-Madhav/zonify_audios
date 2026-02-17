@@ -37,7 +37,7 @@ exports.createOrder = async (req, res) => {
 
       orderItems.push({
         product: product._id,
-        name: product.name,
+        productName: product.productName,
         price: product.price,
         quantity: item.quantity,
       });
@@ -217,7 +217,7 @@ exports.cancelOrders = async (req, res) => {
     const payment = await Payment.findOne({ orderId: order._id });
 
     if (payment && payment.paymentMethod === "online") {
-      payment.status = "refunded"; // logical placeholder
+      payment.status = "refunded"; 
       await payment.save();
     }
 
