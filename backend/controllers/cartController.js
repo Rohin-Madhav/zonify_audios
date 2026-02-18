@@ -24,6 +24,11 @@ exports.addCart = async (req, res) => {
       return res.status(400).json({ message: "Insufficient stock" });
     }
 
+  
+    if(productData.status === "Out Of Stock"){
+      return res.status(400).json({message:"Product is out of stock"})
+    }
+
     const price = productData.price;
 
     let cart = await Cart.findOne({ userId });
@@ -165,7 +170,10 @@ exports.removeCartItem = async (req, res) => {
     cart.items.splice(itemIndex, 1);
     await cart.save();
 
-    res.status(200).json(cart);
+    res.status(200).json({
+      message: "Item removed from cart",
+      cart,
+    })
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
