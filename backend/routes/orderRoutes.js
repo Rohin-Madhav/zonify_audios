@@ -12,19 +12,19 @@ router.post(
 router.get("/", auth, authorizeRoles("admin"), orderController.getAllOrders);
 router.get("/my", auth, authorizeRoles("user"), orderController.getMyOrders);
 router.get(
-  "/my/:id",
+  "/my/:orderId",
   auth,
   authorizeRoles("user"),
   orderController.getOrdersById,
 );
 router.patch(
-  "/update",
+  "/update/:orderId",
   auth,
   authorizeRoles("admin"),
   orderController.updateOrders,
 );
 router.delete(
-  "/cancel/:id",
+  "/cancel/:orderId",
   auth,
   authorizeRoles("user"),
   orderController.cancelOrders,
