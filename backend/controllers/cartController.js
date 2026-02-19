@@ -1,7 +1,7 @@
 const Cart = require("../models/cartSchema");
 const Product = require("../models/productSchema");
 exports.addCart = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   const { product, quantity } = req.body.items?.[0] || {};
 
   try {
@@ -24,9 +24,8 @@ exports.addCart = async (req, res) => {
       return res.status(400).json({ message: "Insufficient stock" });
     }
 
-  
-    if(productData.status === "Out Of Stock"){
-      return res.status(400).json({message:"Product is out of stock"})
+    if (productData.status === "Out Of Stock") {
+      return res.status(400).json({ message: "Product is out of stock" });
     }
 
     const price = productData.price;
@@ -66,8 +65,20 @@ exports.addCart = async (req, res) => {
 };
 
 exports.getCart = async (req, res) => {
-  const  userId  = req.user.id;
+  const userId = req.user._id;
+  const role = req.user.role;
   try {
+    if (role === "admin") {
+      const carts = await Cart.find()
+        .populate("userId", "name email")
+        .populate("items.product", "productName price stock images");
+
+      return res.status(200).json({
+        count: carts.length,
+        carts,
+      });
+    }
+
     const cart = await Cart.findOne({ userId }).populate(
       "items.product",
       "productName price stock images",
@@ -95,8 +106,8 @@ exports.getCart = async (req, res) => {
 };
 
 exports.updateCart = async (req, res) => {
-  try{
-   const userId = req.user._id;
+  try {
+    const userId = req.user._id;
     const { product, quantity } = req.body.items?.[0] || {};
 
     const qty = Number(quantity);
@@ -120,7 +131,7 @@ exports.updateCart = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.product.toString() === product
+      (item) => item.product.toString() === product,
     );
 
     if (itemIndex === -1) {
@@ -147,7 +158,7 @@ exports.updateCart = async (req, res) => {
 };
 exports.removeCartItem = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { product } = req.body.items?.[0] || {};
 
     if (!product) {
@@ -160,7 +171,7 @@ exports.removeCartItem = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.product.toString() === product
+      (item) => item.product.toString() === product,
     );
 
     if (itemIndex === -1) {
@@ -173,7 +184,7 @@ exports.removeCartItem = async (req, res) => {
     res.status(200).json({
       message: "Item removed from cart",
       cart,
-    })
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
