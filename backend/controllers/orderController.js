@@ -1,13 +1,14 @@
+const mongoose = require("mongoose");
 const Cart = require("../models/cartSchema");
 const Order = require("../models/orderSchema");
 const Payment = require("../models/paymentSchema");
 const Product = require("../models/productSchema");
 exports.createOrder = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { address, paymentMethod } = req.body;
 
-    if (!paymentMethod || !["cod", "online"].includes(paymentMethod)) {
+    if (!paymentMethod || !["COD", "ONLINE"].includes(paymentMethod)) {
       return res.status(400).json({ message: "Invalid payment method" });
     }
 
@@ -54,12 +55,6 @@ exports.createOrder = async (req, res) => {
       orderStatus: "pending",
     });
 
-    for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity },
-      });
-    }
-
     cart.items = [];
     await cart.save();
 
@@ -68,15 +63,15 @@ exports.createOrder = async (req, res) => {
       orderId: order._id,
       paymentMethod,
       amount: totalAmount,
-      status: "pending",
+      status: paymentMethod === "COD" ? "pending" : "pending",
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Order created successfully",
       orderId: order._id,
       totalAmount,
       paymentMethod,
-      nextStep: paymentMethod === "online" ? "pay_now" : "order_confirmed",
+      nextStep: paymentMethod === "ONLINE" ? "pay_now" : "order_confirmed",
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -114,7 +109,7 @@ exports.getMyOrders = async (req, res) => {
 
 exports.getOrdersById = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { orderId } = req.params;
 
     const order = await Order.findById(orderId);
@@ -185,48 +180,62 @@ exports.updateOrders = async (req, res) => {
 };
 
 exports.cancelOrders = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { orderId } = req.params;
 
-    const order = await Order.findById(orderId);
+    await session.withTransaction(async () => {
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+      const order = await Order.findOneAndUpdate(
+        {
+          _id: orderId,
+          user: userId,
+          orderStatus: { $in: ["pending", "processing"] },
+        },
+        {
+          $set: { orderStatus: "cancelled" },
+        },
+        { new: true, session }
+      );
 
-    if (order.user.toString() !== userId) {
-      return res.status(403).json({ message: "Access denied" });
-    }
+      if (!order) {
+        throw new Error("Order cannot be cancelled");
+      }
 
-    if (!["pending", "processing"].includes(order.orderStatus)) {
-      return res.status(400).json({
-        message: "Order cannot be cancelled at this stage",
+      // Restore stock
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: Number(item.quantity) } },
+          { session }
+        );
+      }
+
+      const payment = await Payment.findOne(
+        { orderId: order._id },
+        null,
+        { session }
+      );
+
+      if (payment && payment.paymentMethod === "ONLINE") {
+        payment.status = "refunded";
+        await payment.save({ session });
+      }
+
+      res.status(200).json({
+        message: "Order cancelled successfully",
+        orderId: order._id,
+        status: order.orderStatus,
       });
-    }
 
-    order.orderStatus = "cancelled";
-    await order.save();
-
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: item.quantity },
-      });
-    }
-
-    const payment = await Payment.findOne({ orderId: order._id });
-
-    if (payment && payment.paymentMethod === "online") {
-      payment.status = "refunded"; 
-      await payment.save();
-    }
-
-    res.status(200).json({
-      message: "Order cancelled successfully",
-      orderId: order._id,
-      status: order.orderStatus,
     });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(400).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };
+
