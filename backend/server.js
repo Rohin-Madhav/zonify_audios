@@ -11,8 +11,8 @@ const paymentRoutes = require("./routes/paymentRoutes");
 
 connectDB();
 
-app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
 const app = express();
+app.use("/api/payment/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
