@@ -15,6 +15,8 @@ const paymentSchema = new mongoose.Schema(
     transactionId: {
       type: String,
       unique: true,
+      sparse: true,
+      trim: true,
     },
     paymentGateway: {
       type: String,
@@ -32,7 +34,7 @@ const paymentSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: true,
-      min:1
+      min: 1,
     },
     currency: {
       type: String,
