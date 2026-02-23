@@ -3,38 +3,49 @@ const Cart = require("../models/cartSchema");
 const Order = require("../models/orderSchema");
 const Payment = require("../models/paymentSchema");
 const Product = require("../models/productSchema");
+
+
 exports.createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const userId = req.user._id;
     const { address, paymentMethod } = req.body;
 
     if (!paymentMethod || !["COD", "ONLINE"].includes(paymentMethod)) {
-      return res.status(400).json({ message: "Invalid payment method" });
+      throw new Error("Invalid payment method");
     }
 
     if (!address) {
-      return res.status(400).json({ message: "Shipping address is needed" });
+      throw new Error("Shipping address is needed");
     }
 
-    const cart = await Cart.findOne({ userId });
+    const cart = await Cart.findOne({ userId }).session(session);
+
     if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
+      throw new Error("Cart is empty");
     }
 
     let orderItems = [];
     let totalAmount = 0;
 
     for (const item of cart.items) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findById(item.product).session(session);
+
       if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+        throw new Error("Product not found");
       }
 
       if (product.stock < item.quantity) {
-        return res
-          .status(400)
-          .json({ message: `Insufficient stock for ${product.productName}` });
+        throw new Error(
+          `Insufficient stock for ${product.productName}`
+        );
       }
+
+      // Deduct stock safely
+      product.stock -= item.quantity;
+      await product.save({ session });
 
       orderItems.push({
         product: product._id,
@@ -46,38 +57,54 @@ exports.createOrder = async (req, res) => {
       totalAmount += product.price * item.quantity;
     }
 
-    const order = await Order.create({
-      user: userId,
-      items: orderItems,
-      totalAmount,
-      shippingAddress: address,
-      paymentMethod,
-      orderStatus: "pending",
-    });
+    const order = await Order.create(
+      [
+        {
+          user: userId,
+          items: orderItems,
+          totalAmount,
+          shippingAddress: address,
+          paymentMethod,
+          orderStatus: "pending",
+        },
+      ],
+      { session }
+    );
 
+    await Payment.create(
+      [
+        {
+          userId,
+          orderId: order[0]._id,
+          paymentMethod,
+          amount: totalAmount,
+          status: "pending",
+        },
+      ],
+      { session }
+    );
+
+    // Clear cart
     cart.items = [];
-    await cart.save();
+    await cart.save({ session });
 
-    await Payment.create({
-      userId,
-      orderId: order._id,
-      paymentMethod,
-      amount: totalAmount,
-      status: paymentMethod === "COD" ? "pending" : "pending",
-    });
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(201).json({
       message: "Order created successfully",
-      orderId: order._id,
+      orderId: order[0]._id,
       totalAmount,
       paymentMethod,
       nextStep: paymentMethod === "ONLINE" ? "pay_now" : "order_confirmed",
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    await session.abortTransaction();
+    session.endSession();
+
+    return res.status(400).json({ message: error.message });
   }
 };
-
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({}).populate("user", "name email");
