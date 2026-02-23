@@ -40,6 +40,14 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       default: "INR",
     },
+    retryCount: {
+      type: Number,
+      default: 0,
+    },
+    gatewayPaymentId: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["pending", "succeeded", "failed", "refunded"],
