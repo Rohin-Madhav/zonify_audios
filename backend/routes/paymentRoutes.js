@@ -8,5 +8,6 @@ router.post("/webhook", paymentController.handleRazorpayWebhook);
 router.post("/retry", auth, paymentController.retryPayment);
 router.post("/refund",auth,authorizeRoles("admin"),paymentController.refundPayment)
 router.get("/all",auth,authorizeRoles("admin"),paymentController.getAllPayments)
+router.get("/:id",auth,authorizeRoles("admin"),paymentController.getPaymentById)
 
 module.exports = router;
