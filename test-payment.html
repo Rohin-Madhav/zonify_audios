@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Razorpay Test</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <h2>Test Razorpay Payment</h2>
+  <button id="payBtn">Pay Now</button>
+
+  <script>
+    const options = {
+      key: "rzp_test_SIUc2o8vPapVtX", // your keyId
+      amount: 1549900, // in paise
+      currency: "INR",
+      name: "Zonify Audios",
+      description: "Test Payment",
+      order_id: "order_SJbSPcPf9IG24K", // razorpayOrderId
+      handler: function (response) {
+        alert("Payment Success!");
+        console.log(response);
+      },
+      theme: {
+        color: "#3399cc"
+      }
+    };
+
+    const rzp = new Razorpay(options);
+
+    document.getElementById("payBtn").onclick = function (e) {
+      rzp.open();
+      e.preventDefault();
+    };
+  </script>
+</body>
+</html>
