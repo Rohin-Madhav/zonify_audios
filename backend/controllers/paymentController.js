@@ -344,3 +344,15 @@ exports.getAllPayments = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.getPaymentById = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id).populate(
+      "userId",
+      "name email"
+    );
+    res.status(200).json(payment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
