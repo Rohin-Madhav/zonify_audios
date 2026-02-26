@@ -194,6 +194,22 @@ exports.updateOrders = async (req, res) => {
     }
 
     order.orderStatus = status;
+
+      if (status === "shipped") {
+      order.shippedAt = new Date();
+    }
+
+    if (status === "delivered") {
+      order.deliveredAt = new Date();
+    }
+
+    if (status === "completed") {
+      order.completedAt = new Date();
+    }
+
+    if (status === "cancelled") {
+      order.cancelledAt = new Date();
+    }
     await order.save();
 
     res.status(200).json({
