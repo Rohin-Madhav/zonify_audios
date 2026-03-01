@@ -40,8 +40,8 @@ const Footer = () => {
                         <div key={group} className="space-y-4">
                             <h4 className="text-xs font-semibold tracking-widest uppercase text-black/40">{group}</h4>
                             <ul className="space-y-3">
-                                {items.map((item) => (
-                                    <li key={item.name}>
+                                {items.map((item, idx) => (
+                                    <li key={`${group}-${idx}`}>
                                         <Link
                                             to={item.href}
                                             className="text-sm text-black/60 hover:text-black transition-colors tracking-tight"
