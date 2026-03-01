@@ -11,8 +11,6 @@ router.post(
 );
 router.get(
   "/",
-  auth,
-  authorizeRoles("admin", "user"),
   productController.getProduct,
 );
 router.get(
