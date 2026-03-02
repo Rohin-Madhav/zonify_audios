@@ -5,6 +5,7 @@ import { ShoppingBag, Menu, X } from 'lucide-react';
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [token,setToken] = useState(localStorage.getItem('token'));
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -23,7 +24,12 @@ const Navbar = () => {
         { name: 'About', href: '/about' },
         { name: 'Support', href: '/contact' },
     ];
-
+ const handleLogout = () => {
+    localStorage.removeItem('token'); 
+    setToken(null);                  
+    navigate('/login');                
+    toast.success("Logout successful");
+  };
     return (
         <>
             <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
@@ -69,9 +75,15 @@ const Navbar = () => {
                                 {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                             </button>
                               <div>
-                            <Link to="/login" className="hidden md:block text-sm font-medium text-black/70 hover:text-black transition-colors tracking-tight">
+                           {token ?(
+                            <Link to="/login" className="hidden md:block text-sm font-medium text-black/70 hover:text-black transition-colors tracking-tight" onClick={handleLogout}>
+                                Sign Out
+                            </Link> 
+                           ):(
+                             <Link to="/login" className="hidden md:block text-sm font-medium text-black/70 hover:text-black transition-colors tracking-tight">
                                 Sign In
                             </Link>
+                           )}
                         </div>
                         </div>
                       
