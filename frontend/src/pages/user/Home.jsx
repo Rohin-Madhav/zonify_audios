@@ -6,6 +6,10 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Headphones, Truck, ShieldCheck, RefreshCcw } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useDispatch } from "react-redux";
+import { addItemLocal } from "../../redux/cartSlice";
+import { useNavigate } from "react-router-dom";
+
 
 
 const reasons = [
@@ -51,6 +55,9 @@ const FadeUp = ({ children, delay = 0, className = "" }) => {
 
 const Home = () => {
   const [products, setProducts] = useState([]);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+   const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -64,8 +71,25 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  const handleAddToCart = (product) => {
-    console.log("Add to cart:", product);
+  const handleAddToCart = async (product) => {
+    dispatch(addItemLocal(product));
+
+    try {
+      if (!token) {
+        return navigate("/login");
+      } else {
+        await api.post("/cart/add", {
+           items: [
+            {
+              product: product._id,
+              quantity: 1,
+            },
+          ],
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
 
