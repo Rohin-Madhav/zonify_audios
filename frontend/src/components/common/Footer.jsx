@@ -24,7 +24,7 @@ const Footer = () => {
     <footer className="border-t border-black/5 bg-white">
 
       {/* Main */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col gap-10">
 
           {/* Brand — full width on mobile */}

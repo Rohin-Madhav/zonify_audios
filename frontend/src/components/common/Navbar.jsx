@@ -43,7 +43,7 @@ const Navbar = () => {
             : "bg-white"
         }`}
       >
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-12">
             {/* Logo */}
             <Link
