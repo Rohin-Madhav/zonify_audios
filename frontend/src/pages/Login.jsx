@@ -4,6 +4,9 @@ import { toast } from "react-toastify";
 import api from "../services/Api";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import { useDispatch } from "react-redux";
+import {setCartFromServer} from "../redux/cartSlice"
+
 
 const fields = [
   { name: "email",    type: "email",    placeholder: "Email address", icon: Mail },
@@ -14,6 +17,7 @@ const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch()
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -23,6 +27,9 @@ const Login = () => {
     try {
       const res = await api.post("/auth/login", form);
       localStorage.setItem("token", res.data.token);
+       const cartRes = await api.get("/cart");
+
+  dispatch(setCartFromServer(cartRes.data.cart.items));
       toast.success("Login successful");
       navigate("/");
     } catch (err) {
