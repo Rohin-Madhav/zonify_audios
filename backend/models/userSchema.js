@@ -11,17 +11,6 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    addresses: [
-      {
-        house: { type: String, required: true },
-        street: { type: String, required: true },
-        city: { type: String, required: true },
-        state: { type: String, required: true },
-        pincode: { type: String, required: true },
-        country: { type: String, required: true, default: "India" },
-        isDefault: { type: Boolean, default: false },
-      },
-    ],
   },
   { timestamps: true },
 );
