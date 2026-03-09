@@ -3,14 +3,33 @@ import newArriavalWebp from "../../assets/./hero/newArrival.webp";
 import api from "../../services/Api";
 import ProductCard from "../../components/shop/productCard";
 import { Link } from "react-router-dom";
-import { ArrowRight, Headphones, Truck, ShieldCheck, RefreshCcw } from "lucide-react";
+import {
+  ArrowRight,
+  Headphones,
+  Truck,
+  ShieldCheck,
+  RefreshCcw,
+} from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { useDispatch } from "react-redux";
 import { addItemLocal } from "../../redux/cartSlice";
 import { useNavigate } from "react-router-dom";
 
-
+const ProductCardSkeleton = () => (
+  <div className="border border-black/5 rounded-2xl overflow-hidden animate-pulse">
+    <div className="h-56 bg-black/4" />
+    <div className="p-5 space-y-3 border-t border-black/5">
+      <div className="h-3.5 bg-black/6 rounded-full w-3/4" />
+      <div className="h-3 bg-black/4 rounded-full w-1/2" />
+      <div className="flex items-center justify-between pt-1">
+        <div className="h-4 bg-black/6 rounded-full w-16" />
+        <div className="h-5 bg-black/4 rounded-full w-16" />
+      </div>
+      <div className="h-9 bg-black/4 rounded-xl w-full mt-1" />
+    </div>
+  </div>
+);
 
 const reasons = [
   {
@@ -55,9 +74,10 @@ const FadeUp = ({ children, delay = 0, className = "" }) => {
 
 const Home = () => {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-   const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -66,49 +86,45 @@ const Home = () => {
         setProducts(response.data.data);
       } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
   const handleAddToCart = async (product) => {
+    if (!token) {
+      return navigate("/login");
+    }
     dispatch(addItemLocal(product));
 
     try {
-      if (!token) {
-        return navigate("/login");
-      } else {
-        await api.post("/cart/add", {
-           items: [
-            {
-              product: product._id,
-              quantity: 1,
-            },
-          ],
-        });
-      }
+      await api.post("/cart/add", {
+        items: [
+          {
+            product: product._id,
+            quantity: 1,
+          },
+        ],
+      });
     } catch (error) {
       console.log(error);
     }
   };
 
-
-
   const featuredProducts = products.slice(0, 3);
 
   return (
     <main className="bg-white">
-
       {/* ── Hero ── */}
       <section className="relative pt-36 pb-24 md:pt-52 md:pb-36 overflow-hidden">
-
         {/* Subtle bg glow */}
         <div className="pointer-events-none absolute inset-0 flex items-start justify-center">
           <div className="w-150 h-100 bg-black/2 rounded-full blur-3xl mt-24" />
         </div>
 
-        <div className="max-w-5xl mx-auto px-6 text-center">
-
+        <div className="max-w-7xl mx-auto px-6 text-center">
           {/* Eyebrow */}
           <motion.span
             className="inline-block text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-6"
@@ -127,7 +143,11 @@ const Home = () => {
                 className="text-5xl md:text-7xl font-semibold tracking-tighter text-black leading-[1.05]"
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.15 + i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{
+                  duration: 0.7,
+                  delay: 0.15 + i * 0.1,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
               >
                 {line}
               </motion.h1>
@@ -136,7 +156,11 @@ const Home = () => {
               className="text-5xl md:text-7xl font-semibold tracking-tighter text-black/25 leading-[1.05]"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.7,
+                delay: 0.35,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               Pure performance.
             </motion.h1>
@@ -175,7 +199,11 @@ const Home = () => {
             className="mt-20 relative"
             initial={{ opacity: 0, y: 40, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.9, delay: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              duration: 0.9,
+              delay: 0.65,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-transparent to-black/5 z-10 pointer-events-none" />
             <div className="aspect-video w-full rounded-3xl border border-black/5 overflow-hidden bg-gray-50">
@@ -190,12 +218,15 @@ const Home = () => {
       </section>
 
       {/* ── Featured Products ── */}
-      <section className="max-w-5xl mx-auto px-6 py-20 border-t border-black/5">
-
+      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-black/5">
         <FadeUp className="flex items-end justify-between mb-10">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-2">Handpicked</p>
-            <h2 className="text-2xl font-semibold tracking-tighter text-black">Featured Amplifiers</h2>
+            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-2">
+              Handpicked
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tighter text-black">
+              Featured Amplifiers
+            </h2>
           </div>
           <Link to="/products">
             <button className="group flex items-center gap-2 px-5 py-2.5 border border-black/10 hover:border-black/30 text-sm font-medium tracking-tight text-black/50 hover:text-black transition-all duration-300 cursor-pointer rounded-full">
@@ -207,28 +238,37 @@ const Home = () => {
 
         {/* Product cards stagger in */}
         <div className="grid md:grid-cols-3 gap-6">
-          {featuredProducts.map((product, i) => (
-            <motion.div
-              key={product._id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <ProductCard
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
-            </motion.div>
-          ))}
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))
+            : featuredProducts.map((product, i) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{
+                    duration: 0.5,
+                    delay: i * 0.1,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <ProductCard
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                  />
+                </motion.div>
+              ))}
         </div>
       </section>
 
       {/* ── Why Choose Us ── */}
-      <section className="max-w-5xl mx-auto px-6 py-20 border-t border-black/5">
-
+      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-black/5">
         <FadeUp className="mb-14">
-          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-3">Why us</p>
+          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-3">
+            Why us
+          </p>
           <h2 className="text-3xl font-semibold tracking-tighter text-black">
             Built different.
             <br className="hidden sm:block" />
@@ -244,7 +284,11 @@ const Home = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.5,
+                delay: i * 0.08,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <div className="w-9 h-9 flex items-center justify-center border border-black/10 rounded-xl mb-5 group-hover:border-black/20 transition-colors">
                 <Icon
@@ -252,7 +296,9 @@ const Home = () => {
                   strokeWidth={1.5}
                 />
               </div>
-              <h3 className="text-sm font-semibold tracking-tight text-black mb-2">{title}</h3>
+              <h3 className="text-sm font-semibold tracking-tight text-black mb-2">
+                {title}
+              </h3>
               <p className="text-sm text-black/40 leading-relaxed">{desc}</p>
             </motion.div>
           ))}
@@ -260,7 +306,7 @@ const Home = () => {
       </section>
 
       {/* ── Bottom CTA Banner ── */}
-      <section className="max-w-5xl mx-auto px-6 py-10 pb-24">
+      <section className="max-w-7xl mx-auto px-6 py-10 pb-24">
         <FadeUp>
           <div className="rounded-3xl border border-black/5 bg-black/2 px-10 py-14 flex flex-col sm:flex-row items-center justify-between gap-8">
             <div>
@@ -279,7 +325,6 @@ const Home = () => {
           </div>
         </FadeUp>
       </section>
-
     </main>
   );
 };
