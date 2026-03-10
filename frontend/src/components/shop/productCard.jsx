@@ -3,8 +3,7 @@ import { ShoppingBag } from "lucide-react";
 
 const ProductCard = ({ product, onAddToCart }) => {
   const navigate = useNavigate();
-
-  const { _id, productName, price, image, stock, shortDescription: description } = product;
+  const { _id, productName, price, image, stock, description } = product;
   const isOutOfStock = stock <= 0;
 
   return (
@@ -23,7 +22,6 @@ const ProductCard = ({ product, onAddToCart }) => {
 
       {/* Content */}
       <div className="p-5 space-y-3 border-t border-black/5">
-
         {/* Name + Description */}
         <div>
           <h3 className="text-sm font-semibold tracking-tight text-black line-clamp-1">
@@ -46,11 +44,15 @@ const ProductCard = ({ product, onAddToCart }) => {
               isOutOfStock
                 ? "bg-red-50 text-red-400"
                 : stock < 5
-                ? "bg-yellow-50 text-yellow-500"
-                : "bg-green-50 text-green-500"
+                  ? "bg-yellow-50 text-yellow-500"
+                  : "bg-green-50 text-green-500"
             }`}
           >
-            {isOutOfStock ? "Out of Stock" : stock < 5 ? "Low Stock" : "In Stock"}
+            {isOutOfStock
+              ? "Out of Stock"
+              : stock < 5
+                ? "Low Stock"
+                : "In Stock"}
           </span>
         </div>
 
@@ -67,10 +69,11 @@ const ProductCard = ({ product, onAddToCart }) => {
               : "bg-black hover:bg-black/80 text-white cursor-pointer"
           }`}
         >
-          {!isOutOfStock && <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />}
+          {!isOutOfStock && (
+            <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />
+          )}
           {isOutOfStock ? "Unavailable" : "Add to Cart"}
         </button>
-
       </div>
     </div>
   );
