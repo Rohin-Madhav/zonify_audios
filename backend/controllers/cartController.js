@@ -149,9 +149,16 @@ exports.updateCart = async (req, res) => {
       cart.items[itemIndex].quantity = qty;
     }
 
-    await cart.save();
+   await cart.save();
 
-    res.status(200).json(cart);
+const updatedCart = await Cart.findOne({ userId }).populate(
+  "items.product",
+  "productName price stock images"
+);
+
+res.status(200).json({
+  cart: updatedCart,
+});
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -159,9 +166,9 @@ exports.updateCart = async (req, res) => {
 exports.removeCartItem = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { product } = req.body.items?.[0] || {};
+    const { productId } = req.params;
 
-    if (!product) {
+    if (!productId) {
       return res.status(400).json({ message: "Product is required" });
     }
 
@@ -171,7 +178,7 @@ exports.removeCartItem = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item.product.toString() === product,
+      (item) => item.product.toString() === productId
     );
 
     if (itemIndex === -1) {
@@ -179,12 +186,19 @@ exports.removeCartItem = async (req, res) => {
     }
 
     cart.items.splice(itemIndex, 1);
+
     await cart.save();
+
+    const updatedCart = await Cart.findOne({ userId }).populate(
+      "items.product",
+      "productName price images stock"
+    );
 
     res.status(200).json({
       message: "Item removed from cart",
-      cart,
+      cart: updatedCart,
     });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
