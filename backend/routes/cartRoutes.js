@@ -6,13 +6,13 @@ const authorizeRoles = require("../middilwares/role");
 router.post("/add", auth, authorizeRoles("user"), cartController.addCart);
 router.get("/", auth, authorizeRoles("user", "admin"), cartController.getCart);
 router.patch(
-  "/update/:id",
+  "/update",
   auth,
   authorizeRoles("user"),
   cartController.updateCart,
 );
 router.delete(
-  "/remove/:id",
+  "/remove/:productId",
   auth,
   authorizeRoles("user"),
   cartController.removeCartItem,
