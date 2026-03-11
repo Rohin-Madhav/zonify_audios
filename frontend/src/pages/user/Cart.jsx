@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import api from "../../services/Api";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
-import { ArrowRight, Minus, Package,Plus } from "lucide-react";
+import { ArrowRight, Minus, Package, Plus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useDispatch } from "react-redux";
+import { setCartFromServer } from "../../redux/cartSlice";
 
 // Skeleton row
 const CartItemSkeleton = () => (
@@ -18,6 +20,7 @@ const CartItemSkeleton = () => (
 );
 
 const Cart = () => {
+  const dispatch = useDispatch();
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
@@ -29,6 +32,7 @@ const Cart = () => {
         const res = await api.get("/cart");
         const items = res.data.cart.items || [];
         setCart(items);
+        dispatch(setCartFromServer(items));
         setTotalQuantity(items.reduce((sum, item) => sum + item.quantity, 0));
         setTotal(res.data.total);
       } catch (err) {
@@ -43,13 +47,59 @@ const Cart = () => {
 
   const handleUpdateQuantity = async (productId, currentQuantity, delta) => {
     const newQty = currentQuantity + delta;
-    if (newQty < 0) return;
+
+    if (newQty < 1) return;
 
     try {
-      const res =await api.post("/cart/update",{productId,quantity:newQty});
-      setCart(res.data.cart.items)
-      console.log(res.data.cart.items)
-    } catch (error) {}
+      const res = await api.patch("/cart/update", {
+        items: [{ product: productId, quantity: newQty }],
+      });
+
+      const items = res.data.cart.items || [];
+
+      setCart(items);
+
+      dispatch(setCartFromServer(items));
+
+      const qty = items.reduce((sum, item) => sum + item.quantity, 0);
+      setTotalQuantity(qty);
+
+      const totalPrice = items.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0,
+      );
+
+      setTotal(totalPrice);
+    } catch (error) {
+      console.log(error.response?.data);
+      toast.error("Failed to update cart");
+    }
+  };
+
+  const handleRemoveItem = async (productId) => {
+    try {
+      const res = await api.delete(`/cart/remove/${productId}`);
+
+      const items = res.data.cart.items || [];
+
+      setCart(items);
+      dispatch(setCartFromServer(items));
+
+      const qty = items.reduce((sum, item) => sum + item.quantity, 0);
+      setTotalQuantity(qty);
+
+      const totalPrice = items.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0,
+      );
+
+      setTotal(totalPrice);
+
+      toast.success("Item removed from cart");
+    } catch (error) {
+      console.log(error.response?.data);
+      toast.error("Failed to remove item");
+    }
   };
 
   return (
@@ -131,9 +181,8 @@ const Cart = () => {
                   {/* Image */}
                   <div className="w-16 h-16 rounded-xl bg-black/2 border border-black/5 flex items-center justify-center shrink-0 overflow-hidden">
                     <img
-                      src={c.product.images}
+                      src={c.product.images?.[0]}
                       alt={c.product.productName}
-                      className="w-full h-full object-contain p-1"
                     />
                   </div>
 
@@ -142,22 +191,24 @@ const Cart = () => {
                     <p className="text-sm font-medium tracking-tight text-black truncate">
                       {c.product.productName}
                     </p>
-                    <button>
-                      <Minus
-                        className="w-5 h-5 text-black/25"
-                        strokeWidth={1.5}
-                        onClick={() => handleUpdateQuantity(c.product._id, c.quantity, -1)}
-                      />
+                    <button
+                      onClick={() =>
+                        handleUpdateQuantity(c.product._id, c.quantity, -1)
+                      }
+                    >
+                      <Minus className="w-5 h-5 text-black/25 cursor-pointer" />
                     </button>
-                    <span className="text-xs text-black/30 tracking-tight mt-0.5">
+
+                    <span className="text-xs p-2 text-black/30 tracking-tight mt-0.5">
                       Qty: {c.quantity}
                     </span>
-                    <button>
-                      <Plus
-                        className="w-5 h-5 text-black/25"
-                        strokeWidth={1.5}
-                        onClick={() => handleUpdateQuantity(c.product._id, c.quantity, 1)}
-                      />
+
+                    <button
+                      onClick={() =>
+                        handleUpdateQuantity(c.product._id, c.quantity, 1)
+                      }
+                    >
+                      <Plus className="w-5 h-5 text-black/25 cursor-pointer" />
                     </button>
                   </div>
 
@@ -165,8 +216,12 @@ const Cart = () => {
                   <p className="text-sm font-semibold tracking-tight text-black shrink-0">
                     ₹{(c.product.price * c.quantity).toLocaleString()}
                   </p>
+                  <button onClick={() => handleRemoveItem(c.product._id)}>
+                    <Trash2 className="w-4 h-4 text-red-500 cursor-pointer" />
+                  </button>
                 </motion.div>
               ))}
+              <div></div>
             </div>
 
             {/* Summary */}
@@ -175,6 +230,7 @@ const Cart = () => {
                 <span>Subtotal ({totalQuantity} items)</span>
                 <span>₹{total.toLocaleString()}</span>
               </div>
+
               <div className="flex items-center justify-between text-xs text-black/30 tracking-tight">
                 <span>Shipping</span>
                 <span className="text-green-500 font-medium">Free</span>
