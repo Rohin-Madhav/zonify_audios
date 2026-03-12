@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useDispatch } from "react-redux";
 import { addItemLocal } from "../../redux/cartSlice";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const ProductCardSkeleton = () => (
   <div className="border border-black/5 rounded-2xl overflow-hidden animate-pulse">
@@ -58,6 +59,7 @@ const Products = () => {
           },
         ],
       });
+      toast.success("Item added to cart");
     } catch (error) {
       console.log("Product not found");
     }
