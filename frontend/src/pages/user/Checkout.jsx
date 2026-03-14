@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import api from "../../services/Api";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Checkout = () => {
   const [cart, setCart] = useState([]);
@@ -19,6 +19,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -56,6 +57,38 @@ const Checkout = () => {
     return true;
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateAddress()) return;
+
+    if (paymentMethod === "COD") {
+      return handleCODSubmit(e);
+    }
+
+    if (paymentMethod === "ONLINE") {
+      setLoading(true);
+
+      try {
+        // 1️⃣ create order first
+        const orderRes = await api.post("/order/create", {
+          address,
+          paymentMethod: "ONLINE",
+        });
+
+        const orderId = orderRes.data.orderId;
+
+        // 2️⃣ initialize razorpay
+        await handleOnlinePayment(orderId);
+      } catch (error) {
+        console.log(error.response?.data);
+        toast.error("Failed to start payment");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleCODSubmit = async (e) => {
     e.preventDefault();
     if (!validateAddress()) return;
@@ -72,60 +105,50 @@ const Checkout = () => {
       console.log(res.data);
     } catch (error) {
       console.log(error.response?.data);
-      toast.error(error.response?.data?.message || "Order failed. Please try again.");
+      toast.error(
+        error.response?.data?.message || "Order failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOnlinePayment = async (e) => {
-    e.preventDefault();
+  const handleOnlinePayment = async (orderId) => {
     if (!validateAddress()) return;
 
     setLoading(true);
-    try {
-      const orderData = {
-        address,
-        paymentMethod: "ONLINE",
-      };
-      const res = await api.post("/order/initiate-payment", orderData);
 
-      if (res.data.razorpayOrderId) {
-        const options = {
-          key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-          amount: total * 100,
-          currency: "INR",
-          name: "Your Store Name",
-          description: `Order for ₹${total}`,
-          order_id: res.data.razorpayOrderId,
-          handler: async (paymentResponse) => {
-            try {
-              await api.post("/order/verify-payment", {
-                razorpay_order_id: paymentResponse.razorpay_order_id,
-                razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                razorpay_signature: paymentResponse.razorpay_signature,
-              });
-              toast.success("Payment successful! Order confirmed.");
-              setOrderSuccess(true);
-            } catch (error) {
-              toast.error("Payment verification failed");
-            }
-          },
-          prefill: {
-            name: "",
-            email: "",
-            contact: "",
-          },
-          theme: {
-            color: "#000000",
-          },
-        };
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-      }
+    try {
+      const res = await api.post("/payment/initialize", { orderId });
+
+      const { razorpayOrderId, amount, currency, keyId } = res.data;
+
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        order_id: razorpayOrderId,
+        name: "Zonify Audios",
+        description: "Order Payment",
+
+        handler: function (response) {
+          console.log("Payment success:", response);
+
+          toast.success("Payment processing...");
+
+          navigate("/myOrders");
+        },
+
+        theme: {
+          color: "#000000",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
       console.log(error.response?.data);
-      toast.error("Payment initiation failed");
+      toast.error("Payment failed");
     } finally {
       setLoading(false);
     }
@@ -149,11 +172,25 @@ const Checkout = () => {
               className="mb-8 flex justify-center"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.6,
+                delay: 0.2,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <div className="w-20 h-20 flex items-center justify-center border border-black/10 rounded-full">
-                <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-10 h-10 text-black"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
             </motion.div>
@@ -184,9 +221,8 @@ const Checkout = () => {
             >
               You will receive a confirmation email shortly.
             </motion.p>
-
             <motion.button
-              onClick={() => (window.location.href = "/orders")}
+              onClick={() => (window.location.href = "/myOrders")}
               className="px-7 py-3 bg-black hover:bg-black/80 text-white text-sm font-medium tracking-tight rounded-full transition-all duration-300 cursor-pointer"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -330,10 +366,7 @@ const Checkout = () => {
                 How would you like to pay?
               </h2>
 
-              <form
-                onSubmit={paymentMethod === "COD" ? handleCODSubmit : handleOnlinePayment}
-                className="space-y-4"
-              >
+              <form onSubmit={handleSubmit}>
                 {/* COD Option */}
                 <motion.label
                   className={`flex items-start p-6 border rounded-xl cursor-pointer transition-all duration-300 ${
@@ -412,8 +445,8 @@ const Checkout = () => {
                   {loading
                     ? "Processing..."
                     : paymentMethod === "COD"
-                    ? "Place Order"
-                    : "Proceed to Payment"}
+                      ? "Place Order"
+                      : "Proceed to Payment"}
                 </motion.button>
               </form>
             </motion.div>
@@ -455,7 +488,7 @@ const Checkout = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.35 + i * 0.05 }}
                     >
-                      <div className="w-16 h-16 rounded-lg overflow-hidden border border-black/5 flex-shrink-0">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border border-black/5 shrink-0">
                         <img
                           src={item.product.images?.[0]}
                           alt={item.product.productName}
@@ -470,7 +503,10 @@ const Checkout = () => {
                           Qty: {item.quantity}
                         </p>
                         <p className="font-semibold text-black mt-2 tracking-tight">
-                          ₹{(item.product.price * item.quantity).toLocaleString()}
+                          ₹
+                          {(
+                            item.product.price * item.quantity
+                          ).toLocaleString()}
                         </p>
                       </div>
                     </motion.div>
@@ -500,7 +536,9 @@ const Checkout = () => {
 
                 <div className="pt-4 border-t border-black/5">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-black/60 tracking-tight">Total</span>
+                    <span className="text-sm text-black/60 tracking-tight">
+                      Total
+                    </span>
                     <span className="text-3xl font-semibold text-black tracking-tighter">
                       ₹{total.toLocaleString()}
                     </span>
