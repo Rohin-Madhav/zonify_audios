@@ -70,7 +70,7 @@ const Checkout = () => {
       setLoading(true);
 
       try {
-        // 1️⃣ create order first
+        //  create order first
         const orderRes = await api.post("/order/create", {
           address,
           paymentMethod: "ONLINE",
@@ -78,7 +78,7 @@ const Checkout = () => {
 
         const orderId = orderRes.data.orderId;
 
-        // 2️⃣ initialize razorpay
+        //  initialize razorpay
         await handleOnlinePayment(orderId);
       } catch (error) {
         console.log(error.response?.data);
@@ -134,9 +134,9 @@ const Checkout = () => {
         handler: function (response) {
           console.log("Payment success:", response);
 
-          toast.success("Payment processing...");
+          toast.success("Payment success");
 
-          navigate("/myOrders");
+          navigate("/payment-success");
         },
 
         theme: {
