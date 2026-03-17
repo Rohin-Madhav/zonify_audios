@@ -30,10 +30,10 @@ router.post("/register", registerLimiter, userController.register);
 router.post("/login", loginLimiter, userController.login);
 router.get("/users", auth, authorizeRoles("admin"), userController.getUsers);
 router.get(
-  "/users/:id",
+  "/users/me",
   auth,
   authorizeRoles("admin", "user"),
-  userController.getUsersById,
+  userController.getMe,
 );
 
 module.exports = router;
