@@ -51,11 +51,10 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-exports.getUsersById = async (req, res) => {
-  const { id } = req.params;
+exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(id).select("-password");
-    res.status(201).json({ message: "user fetched successfully", user });
+    const user = await User.findById(req.user.id).select("-password");
+    res.status(200).json({ user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
