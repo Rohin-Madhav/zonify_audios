@@ -26,12 +26,23 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", form);
-      localStorage.setItem("token", res.data.token);
-       const cartRes = await api.get("/cart");
+    
+      const {token,user} = res.data
 
-  dispatch(setCartFromServer(cartRes.data.cart.items));
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role",user.role)
+      
+ if (user.role === "user") {
+  const cartRes = await api.get("/cart");
+  const items = cartRes.data?.cart?.items || [];
+  dispatch(setCartFromServer(items));
+}
       toast.success("Login successful");
+    if (user.role === "admin") {
+      navigate("/admin");
+    } else {
       navigate("/");
+    }
     } catch (err) {
       console.log(err.message);
       toast.error("Login failed");
