@@ -13,7 +13,6 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       phone,
       role,
-      
     });
     res
       .status(201)
@@ -32,7 +31,14 @@ exports.login = async (req, res) => {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
         expiresIn: "7d",
       });
-      res.json({ message: "Login successful", token });
+      res.json({
+        message: "Login successful",
+        token,
+        user: {
+          id: user._id,
+          role: user.role,
+        },
+      });
     } else {
       res.status(401).json({ message: "Invalid credentials" });
     }
