@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import AddProducts from "./AddProducts";
 
 const Navbar = () => {
   const location = useLocation();
@@ -30,14 +31,8 @@ const Navbar = () => {
 
       {/* Right side */}
       <div className="flex items-center gap-4">
-        {/* Add Product button (only in products page) */}
 
-        <button
-          onClick={() => navigate("/admin/products/create")}
-          className="text-xs px-4 py-2 bg-black text-white rounded-lg hover:bg-black/80 transition-all"
-        >
-          + Add Product
-        </button>
+     <AddProducts/>
 
         {/* Admin label */}
         <span className="text-xs text-black/40">Admin</span>
