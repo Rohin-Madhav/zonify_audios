@@ -15,7 +15,7 @@ const productSchema = new mongoose.Schema(
     },
     brand: {
       type: String,
-      default: "Zonify",
+      default: "Zonyfy",
       required: true,
     },
     price: {
@@ -36,11 +36,10 @@ const productSchema = new mongoose.Schema(
     },
     channels: {
       type: Number,
-      required: false,
     },
     images: {
       type: [String],
-      required: false,
+      default: [],
     },
     status: {
       type: String,
