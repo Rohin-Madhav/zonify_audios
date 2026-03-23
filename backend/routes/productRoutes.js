@@ -2,17 +2,16 @@ const router = require("express").Router();
 const productController = require("../controllers/productController");
 const auth = require("../middilwares/auth");
 const authorizeRoles = require("../middilwares/role");
+const upload = require("../middilwares/multer");
 
 router.post(
   "/create",
   auth,
   authorizeRoles("admin"),
+  upload.array("images", 5),
   productController.addProduct,
 );
-router.get(
-  "/",
-  productController.getProduct,
-);
+router.get("/", productController.getProduct);
 router.get(
   "/:id",
   auth,
