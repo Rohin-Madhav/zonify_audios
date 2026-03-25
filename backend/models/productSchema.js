@@ -47,6 +47,10 @@ const productSchema = new mongoose.Schema(
       enum: ["In Stock", "Out Of Stock"],
       default: "In Stock",
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
