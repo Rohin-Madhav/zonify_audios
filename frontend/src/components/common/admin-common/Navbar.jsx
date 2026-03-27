@@ -11,7 +11,7 @@ const Navbar = () => {
     if (location.pathname.includes("products")) return "Products";
     if (location.pathname.includes("orders")) return "Orders";
     if (location.pathname.includes("customers")) return "Customers";
-    if (location.pathname.includes("settings")) return "Settings";
+    if (location.pathname.includes("payments")) return "Payments";
     return "Dashboard";
   };
 
