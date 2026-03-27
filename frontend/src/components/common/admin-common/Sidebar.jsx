@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  DollarSign,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -40,6 +41,12 @@ const Sidebar = () => {
       label: "Orders",
       icon: Package,
       href: "/admin/orders",
+      badge: null,
+    },
+    {
+      label: "Payments",
+      icon:DollarSign,
+      href: "/admin/payments",
       badge: null,
     },
   ];
