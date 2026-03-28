@@ -62,7 +62,7 @@ const ProductDetails = () => {
 
   const specs = [
     { icon: Zap,     label: "Power Output", value: `${powerOutPut}W` },
-    { icon: Radio,   label: "Channels",     value: channels },
+    { icon: Radio,   label: "Channels",     value:`${channels}.1` },
     { icon: Package, label: "Stock",        value: `${stock} units` },
   ];
 
