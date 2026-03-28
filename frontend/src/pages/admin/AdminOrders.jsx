@@ -6,6 +6,8 @@ import { Eye } from "lucide-react";
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
+  const [shippingAddress, setShippingAddress] = useState(null);
+  const [viewAddress, setSViewAddress] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -23,6 +25,18 @@ const AdminOrders = () => {
     fetchOrders();
   }, []);
 
+  const handleView = async (orderId) => {
+    try {
+      const res = await api.get(`/order/my/${orderId}`);
+
+      setShippingAddress(res.data.shippingAddress);
+      console.log(res.data);
+      setSViewAddress(true);
+    } catch (error) {
+      console.log(error.response?.data);
+    }
+  };
+
   return (
     <div>
       <div>
@@ -37,9 +51,10 @@ const AdminOrders = () => {
               <th>Email</th>
               <th>Total</th>
               <th>Payment </th>
-              <th>Status</th>
+              <th>Payment Status</th>
               <th>Address</th>
               <th>Date</th>
+              <th>Order Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -54,7 +69,7 @@ const AdminOrders = () => {
                 <td>{order.paymentStatus ? order.paymentStatus : "Pending"}</td>
                 <td>
                   {order.shippingAddress.city},{order.shippingAddress.state}
-                  <button>
+                  <button onClick={() => handleView(order._id)}>
                     <Eye />
                   </button>
                 </td>
@@ -65,6 +80,17 @@ const AdminOrders = () => {
                 </td>
               </tr>
             ))}
+            {viewAddress && shippingAddress && (
+              <div>
+                <p>{shippingAddress.house}</p>
+                <p>{shippingAddress.street}</p>
+                <p>{shippingAddress.city}</p>
+                <p>{shippingAddress.state}</p>
+                <p>{shippingAddress.pincode}</p>
+
+                <button onClick={() => setSViewAddress(false)}>Close</button>
+              </div>
+            )}
           </tbody>
         </table>
       </div>
