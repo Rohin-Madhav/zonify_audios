@@ -4,7 +4,6 @@ const Order = require("../models/orderSchema");
 const Payment = require("../models/paymentSchema");
 const Product = require("../models/productSchema");
 
-
 exports.createOrder = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -38,9 +37,7 @@ exports.createOrder = async (req, res) => {
       }
 
       if (product.stock < item.quantity) {
-        throw new Error(
-          `Insufficient stock for ${product.productName}`
-        );
+        throw new Error(`Insufficient stock for ${product.productName}`);
       }
 
       // Deduct stock safely
@@ -68,7 +65,7 @@ exports.createOrder = async (req, res) => {
           orderStatus: "pending",
         },
       ],
-      { session }
+      { session },
     );
 
     await Payment.create(
@@ -81,7 +78,7 @@ exports.createOrder = async (req, res) => {
           status: "pending",
         },
       ],
-      { session }
+      { session },
     );
 
     // Clear cart
@@ -136,17 +133,11 @@ exports.getMyOrders = async (req, res) => {
 
 exports.getOrdersById = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { orderId } = req.params;
-
     const order = await Order.findById(orderId);
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
-    }
-
-    if (order.user.toString() !== userId) {
-      return res.status(403).json({ message: "Access denied" });
     }
 
     res.status(200).json(order);
@@ -195,7 +186,7 @@ exports.updateOrders = async (req, res) => {
 
     order.orderStatus = status;
 
-      if (status === "shipped") {
+    if (status === "shipped") {
       order.shippedAt = new Date();
     }
 
@@ -230,7 +221,6 @@ exports.cancelOrders = async (req, res) => {
     const { orderId } = req.params;
 
     await session.withTransaction(async () => {
-
       const order = await Order.findOneAndUpdate(
         {
           _id: orderId,
@@ -240,7 +230,7 @@ exports.cancelOrders = async (req, res) => {
         {
           $set: { orderStatus: "cancelled" },
         },
-        { new: true, session }
+        { new: true, session },
       );
 
       if (!order) {
@@ -252,15 +242,13 @@ exports.cancelOrders = async (req, res) => {
         await Product.findByIdAndUpdate(
           item.product,
           { $inc: { stock: Number(item.quantity) } },
-          { session }
+          { session },
         );
       }
 
-      const payment = await Payment.findOne(
-        { orderId: order._id },
-        null,
-        { session }
-      );
+      const payment = await Payment.findOne({ orderId: order._id }, null, {
+        session,
+      });
 
       if (payment && payment.paymentMethod === "ONLINE") {
         payment.status = "refunded";
@@ -272,13 +260,10 @@ exports.cancelOrders = async (req, res) => {
         orderId: order._id,
         status: order.orderStatus,
       });
-
     });
-
   } catch (error) {
     return res.status(400).json({ message: error.message });
   } finally {
     session.endSession();
   }
 };
-
