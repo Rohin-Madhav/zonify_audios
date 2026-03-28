@@ -14,7 +14,7 @@ router.get("/my", auth, authorizeRoles("user"), orderController.getMyOrders);
 router.get(
   "/my/:orderId",
   auth,
-  authorizeRoles("user"),
+  authorizeRoles("admin", "user"),
   orderController.getOrdersById,
 );
 router.patch(
