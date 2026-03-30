@@ -104,10 +104,27 @@ exports.createOrder = async (req, res) => {
 };
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find({}).populate("user", "name email");
+    const orders = await Order.find({}).populate("user", "name email").lean();
+
+    const orderIds = orders.map((order) => order._id);
+    const payments = await Payment.find(
+      { orderId: { $in: orderIds } },
+      "orderId status",
+    ).lean();
+
+    const paymentStatusByOrderId = new Map(
+      payments.map((payment) => [payment.orderId.toString(), payment.status]),
+    );
+
+    const ordersWithPaymentStatus = orders.map((order) => ({
+      ...order,
+      paymentStatus:
+        paymentStatusByOrderId.get(order._id.toString()) || "pending",
+    }));
+
     res.status(200).json({
       message: "fetched all orders",
-      data: orders,
+      data: ordersWithPaymentStatus,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
