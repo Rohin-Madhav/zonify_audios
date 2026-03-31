@@ -93,7 +93,6 @@ exports.handleRazorpayWebhook = async (req, res) => {
 
     const event = JSON.parse(req.body.toString());
 
-   
     if (event.event === "payment.captured") {
       const entity = event.payload.payment.entity;
 
@@ -118,7 +117,7 @@ exports.handleRazorpayWebhook = async (req, res) => {
       }
 
       payment.status = "succeeded";
-      payment.gatewayPaymentId = razorpayPaymentId;  // ← IMPORTANT
+      payment.gatewayPaymentId = razorpayPaymentId; // ← IMPORTANT
       payment.paymentMode = entity.method;
 
       await payment.save();
@@ -130,7 +129,6 @@ exports.handleRazorpayWebhook = async (req, res) => {
       }
     }
 
- 
     if (event.event === "refund.processed") {
       const refundEntity = event.payload.refund.entity;
 
@@ -154,7 +152,6 @@ exports.handleRazorpayWebhook = async (req, res) => {
       }
     }
 
-    
     if (event.event === "refund.failed") {
       const refundEntity = event.payload.refund.entity;
       const paymentId = refundEntity.payment_id;
@@ -170,7 +167,6 @@ exports.handleRazorpayWebhook = async (req, res) => {
     }
 
     return res.status(200).json({ message: "Webhook processed" });
-
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -328,14 +324,19 @@ exports.refundPayment = async (req, res) => {
 
 exports.getAllPayments = async (req, res) => {
   try {
-    const payments = await Payment.find({
-      status: req.query.status,
-      currency: req.query.currency,
-      paymentGateway: req.query.paymentGateway,
-    })
+    const filter = {};
+
+    //  Only add fields to filter if they are provided in the URL
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.currency) filter.currency = req.query.currency;
+    if (req.query.paymentGateway)
+      filter.paymentGateway = req.query.paymentGateway;
+
+    const payments = await Payment.find(filter)
       .sort({ createdAt: -1 })
       .populate("userId", "name email")
       .populate("orderId", "totalAmount orderStatus");
+
     res.status(200).json({
       message: "All payments",
       data: payments,
@@ -349,7 +350,7 @@ exports.getPaymentById = async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id).populate(
       "userId",
-      "name email"
+      "name email",
     );
     res.status(200).json(payment);
   } catch (error) {
