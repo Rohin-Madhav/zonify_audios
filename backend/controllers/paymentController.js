@@ -367,11 +367,9 @@ exports.getAllPayments = async (req, res) => {
 };
 
 exports.getPaymentById = async (req, res) => {
+  const { paymentId } = req.params;
   try {
-    const payment = await Payment.findById(req.params.id).populate(
-      "userId",
-      "name email",
-    );
+    const payment = await Payment.findById(paymentId);
     res.status(200).json(payment);
   } catch (error) {
     res.status(500).json({ message: error.message });
