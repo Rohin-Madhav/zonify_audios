@@ -25,7 +25,7 @@ router.post(
 router.post("/webhook", paymentController.handleRazorpayWebhook);
 router.post("/retry", auth, retryLimiter, paymentController.retryPayment);
 router.post(
-  "/refund",
+  "/refund/:paymentId",
   auth,
   authorizeRoles("admin"),
   paymentController.refundPayment,
