@@ -37,7 +37,7 @@ router.get(
   paymentController.getAllPayments,
 );
 router.get(
-  "/:id",
+  "/:paymentId",
   auth,
   authorizeRoles("admin"),
   paymentController.getPaymentById,
