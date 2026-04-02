@@ -1,6 +1,7 @@
 require("dotenv").config();
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const Payment = require("../models/paymentSchema");
 const Order = require("../models/orderSchema");
 
@@ -243,12 +244,17 @@ exports.retryPayment = async (req, res) => {
 };
 
 exports.refundPayment = async (req, res) => {
-  const { orderId } = req.params;
+  const { paymentId } = req.params;
 
   try {
-    const payment = await Payment.findOne({ orderId });
+    const payment = await Payment.findById(paymentId);
+
     if (!payment) {
       return res.status(404).json({ message: "Payment not found" });
+    }
+
+    if (payment.status === "refunded") {
+      return res.status(400).json({ message: "Already refunded" });
     }
 
     if (payment.status !== "succeeded") {
@@ -269,7 +275,8 @@ exports.refundPayment = async (req, res) => {
       });
     }
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(payment.orderId);
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -280,10 +287,25 @@ exports.refundPayment = async (req, res) => {
       });
     }
 
-    //  find razorpay payment
-    await razorpay.payments.refund(payment.gatewayPaymentId);
+    // Razorpay refund
+    try {
+      await razorpay.payments.refund(payment.gatewayPaymentId, {
+        amount: payment.amount * 100, // in paise
+      });
+    } catch (err) {
+      if (err?.error?.description?.includes("already refunded")) {
+        payment.status = "refunded";
+        await payment.save();
 
-    //   Start DB transaction
+        return res.status(200).json({
+          message: "Already refunded (synced)",
+        });
+      }
+
+      return res.status(500).json({
+        message: err?.error?.description || "Razorpay refund failed",
+      });
+    }
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -294,7 +316,6 @@ exports.refundPayment = async (req, res) => {
       order.orderStatus = "cancelled";
       await order.save({ session });
 
-      // Restore stock
       for (const item of order.items) {
         const product = await Product.findById(item.product).session(session);
         if (product) {
@@ -314,14 +335,13 @@ exports.refundPayment = async (req, res) => {
       session.endSession();
 
       return res.status(500).json({
-        message: "Refund succeeded but DB update failed. Manual review needed.",
+        message: "Refund succeeded but DB update failed",
       });
     }
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
-
 exports.getAllPayments = async (req, res) => {
   try {
     const filter = {};
