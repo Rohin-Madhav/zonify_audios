@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import newArriavalWebp from "../../assets/./hero/newArrival.webp";
 import api from "../../services/Api";
 import ProductCard from "../../components/shop/productCard";
 import { Link } from "react-router-dom";
@@ -167,7 +166,7 @@ const Carousel = ({ products, onAddToCart }) => {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <img
-                src={product.images?.[0] || newArriavalWebp}
+                src={product.images}
                 alt={product.productName}
                 className="w-full h-full object-contain max-w-xs md:max-w-md"
               />
