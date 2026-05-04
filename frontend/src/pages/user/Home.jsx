@@ -166,7 +166,7 @@ const Carousel = ({ products, onAddToCart }) => {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <img
-                src={product.images}
+                src={product.images?.[0]}
                 alt={product.productName}
                 className="w-full h-full object-contain max-w-xs md:max-w-md"
               />
@@ -270,7 +270,9 @@ const Home = () => {
     }
   };
 
-  const featuredProducts = products.slice(0, 3);
+  const latestProducts = [...products]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3);
 
   return (
     <main className="bg-white">
@@ -299,7 +301,7 @@ const Home = () => {
           {loading ? (
             <div className="h-96 md:h-125 bg-black/2 rounded-3xl animate-pulse" />
           ) : (
-            <Carousel products={products} onAddToCart={handleAddToCart} />
+            <Carousel products={latestProducts} onAddToCart={handleAddToCart} />
           )}
         </div>
       </section>
@@ -373,7 +375,7 @@ const Home = () => {
               ? Array.from({ length: 3 }).map((_, i) => (
                   <ProductCardSkeleton key={i} />
                 ))
-              : featuredProducts.map((product, i) => (
+              : latestProducts.map((product, i) => (
                   <motion.div
                     key={product._id}
                     initial={{ opacity: 0, y: 30 }}
