@@ -6,6 +6,9 @@ import { useDispatch } from "react-redux";
 import { addItemLocal } from "../../redux/cartSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const PER_PAGE = 8;
 
 const ProductCardSkeleton = () => (
   <div className="border border-black/5 rounded-2xl overflow-hidden animate-pulse">
@@ -25,6 +28,7 @@ const ProductCardSkeleton = () => (
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -33,7 +37,11 @@ const Products = () => {
     const fetchProducts = async () => {
       try {
         const res = await api.get("/products");
-        setProducts(res.data.data);
+        const sorted = [...res.data.data].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
+
+        setProducts(sorted);
         console.log(res.data);
       } catch (error) {
         console.log(error.message);
@@ -65,10 +73,17 @@ const Products = () => {
     }
   };
 
-  return (
-     <main className="bg-white w-full min-h-screen">
-      <div className=" max-w-7xl mx-auto px-6 pt-32 pb-24">
+  const totalPages = Math.ceil(products.length / PER_PAGE);
+  const paginated = products.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
+  const goTo = (p) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <main className="bg-white w-full min-h-screen">
+      <div className=" max-w-7xl mx-auto px-6 pt-32 pb-24">
         {/* Header */}
         <div className="mb-10">
           <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-black/30 mb-2">
@@ -92,7 +107,7 @@ const Products = () => {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <ProductCardSkeleton key={i} />
               ))
-            : products.map((p, i) => (
+            : paginated.map((p, i) => (
                 <motion.div
                   key={p._id}
                   initial={{ opacity: 0, y: 30 }}
@@ -106,10 +121,69 @@ const Products = () => {
                 >
                   <ProductCard product={p} onAddToCart={handleAddToCart} />
                 </motion.div>
-              ))
-          }
+              ))}
         </div>
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-black/5 pt-8">
+            <p className="text-xs text-black/30 tracking-tight">
+              Page {page} of {totalPages} · {products.length} products
+            </p>
 
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <button
+                onClick={() => goTo(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="w-8 h-8 rounded-xl border border-black/8 hover:border-black/20 flex items-center justify-center text-black/30 hover:text-black transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const p = i + 1;
+                const isActive = p === page;
+                const show =
+                  p === 1 || p === totalPages || Math.abs(p - page) <= 1;
+                const ellipsis =
+                  (p === 2 && page > 3) ||
+                  (p === totalPages - 1 && page < totalPages - 2);
+
+                if (!show && !ellipsis) return null;
+                if (ellipsis && !show)
+                  return (
+                    <span key={p} className="text-xs text-black/20 px-0.5">
+                      …
+                    </span>
+                  );
+
+                return (
+                  <button
+                    key={p}
+                    onClick={() => goTo(p)}
+                    className={`w-8 h-8 rounded-xl text-xs font-medium tracking-tight transition-all ${
+                      isActive
+                        ? "bg-black text-white"
+                        : "border border-black/8 hover:border-black/20 text-black/40 hover:text-black"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+
+              {/* Next */}
+              <button
+                onClick={() => goTo(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
+                className="w-8 h-8 rounded-xl border border-black/8 hover:border-black/20 flex items-center justify-center text-black/30 hover:text-black transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
