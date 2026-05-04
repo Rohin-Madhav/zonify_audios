@@ -14,7 +14,7 @@ const ProductCard = ({ product, onAddToCart }) => {
       {/* Image */}
       <div className="bg-black/2 flex items-center justify-center h-56 overflow-hidden">
         <img
-          src={images}
+          src={images?.[0]}
           alt={productName}
           className="max-h-44 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
         />
